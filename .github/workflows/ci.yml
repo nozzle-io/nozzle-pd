@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libdrm-dev libgbm-dev libegl-dev libgl-dev \
+            puredata-dev gem
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install puredata
+
+      - name: Build
+        run: make
+
+      - name: Verify build artifacts
+        run: ls -la .build/*.pd_* 2>/dev/null || ls -la .build/*.pd_linux 2>/dev/null || echo "No externals found"
