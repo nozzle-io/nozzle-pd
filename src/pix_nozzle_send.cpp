@@ -131,6 +131,7 @@ void pix_nozzle_send :: render(GemState *state) {
     uint32_t copy_bytes = (src_row_bytes < dst_row_bytes) ? src_row_bytes : dst_row_bytes;
 
     bool flip = img.upsidedown;
+    bool need_rgb_to_rgba = (img.csize == 3 && mapped.format == NOZZLE_FORMAT_RGBA8_UNORM);
 
     for(uint32_t y = 0; y < h; y++) {
         uint32_t src_y = flip ? (h - 1 - y) : y;
@@ -138,22 +139,16 @@ void pix_nozzle_send :: render(GemState *state) {
             (const unsigned char *)img.data + (int64_t)src_y * src_row_bytes;
         unsigned char *dst_row =
             (unsigned char *)mapped.data + (int64_t)y * mapped.row_stride_bytes;
-        memcpy(dst_row, src_row, copy_bytes);
-    }
 
-    if(img.csize == 3 && mapped.format == NOZZLE_FORMAT_RGBA8_UNORM) {
-        for(uint32_t y = 0; y < h; y++) {
-            uint32_t src_y = flip ? (h - 1 - y) : y;
-            const unsigned char *src_row =
-                (const unsigned char *)img.data + (int64_t)src_y * (w * 3);
-            unsigned char *dst_row =
-                (unsigned char *)mapped.data + (int64_t)y * mapped.row_stride_bytes;
+        if(need_rgb_to_rgba) {
             for(uint32_t x = 0; x < w; x++) {
                 dst_row[x * 4 + 0] = src_row[x * 3 + 0];
                 dst_row[x * 4 + 1] = src_row[x * 3 + 1];
                 dst_row[x * 4 + 2] = src_row[x * 3 + 2];
                 dst_row[x * 4 + 3] = 255;
             }
+        } else {
+            memcpy(dst_row, src_row, copy_bytes);
         }
     }
 
