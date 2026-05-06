@@ -84,6 +84,9 @@ endif
 
 INCLUDES := -I$(NOZZLE_DIR)/include -I$(NOZZLE_DIR)/src -I$(PLOG_DIR) \
 	$(PD_CFLAGS) $(GEM_CFLAGS)
+ifeq ($(PLATFORM),linux)
+	INCLUDES += -I/usr/include/libdrm
+endif
 
 ALL_NOZZLE_SRCS := $(COMMON_SRCS) $(PLATFORM_SRCS)
 ALL_NOZZLE_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(patsubst %.mm,$(BUILD_DIR)/%.o,$(ALL_NOZZLE_SRCS)))
