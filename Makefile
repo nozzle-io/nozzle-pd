@@ -75,17 +75,22 @@ ifeq ($(PLATFORM),windows)
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_backend.cpp \
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_texture.cpp \
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_sync.cpp
+
+	GEM_SRCS := \
+		$(GEM_DIR)/src/Gem/Exception.cpp \
+		$(GEM_DIR)/src/RTE/Atom.cpp \
+		$(GEM_DIR)/src/Base/CPPExtern.cpp \
+		src/gem_stubs.cpp
+
+	GEM_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(GEM_SRCS))
+
 	PD_DLL_PATH ?=
-	GEM_DLL_PATH ?=
 	LDFLAGS := -shared -static-libgcc -static-libstdc++ \
 		-Wl,--enable-auto-import \
 		-ld3d11 -ldxgi -lopengl32 -lbcrypt
- ifdef PD_DLL_PATH
-	LDFLAGS += -Wl,--enable-auto-import "$(PD_DLL_PATH)"
- endif
- ifdef GEM_DLL_PATH
-	LDFLAGS += -Wl,--enable-auto-import "$(GEM_DLL_PATH)"
- endif
+	ifdef PD_DLL_PATH
+		LDFLAGS += -Wl,--enable-auto-import "$(PD_DLL_PATH)"
+	endif
 	EXT := .dll
 endif
 
@@ -120,6 +125,30 @@ TARGETS := $(BUILD_DIR)/pix_nozzle_send$(EXT) \
 
 all: $(TARGETS)
 
+ifeq ($(PLATFORM),windows)
+
+$(BUILD_DIR)/pix_nozzle_send$(EXT): src/pix_nozzle_send.cpp $(NOZZLE_LIB) $(GEM_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_send.o
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_send.o $(GEM_OBJS) $(NOZZLE_LIB) $(LDFLAGS)
+
+$(BUILD_DIR)/pix_nozzle_receive$(EXT): src/pix_nozzle_receive.cpp $(NOZZLE_LIB) $(GEM_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_receive.o
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_receive.o $(GEM_OBJS) $(NOZZLE_LIB) $(LDFLAGS)
+
+$(BUILD_DIR)/pix_nozzle_gl_send$(EXT): src/pix_nozzle_gl_send.cpp $(NOZZLE_LIB) $(GEM_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_send.o
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_gl_send.o $(GEM_OBJS) $(NOZZLE_LIB) $(LDFLAGS)
+
+$(BUILD_DIR)/pix_nozzle_gl_receive$(EXT): src/pix_nozzle_gl_receive.cpp $(NOZZLE_LIB) $(GEM_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_receive.o
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_gl_receive.o $(GEM_OBJS) $(NOZZLE_LIB) $(LDFLAGS)
+
+else
+
 $(BUILD_DIR)/pix_nozzle_send$(EXT): src/pix_nozzle_send.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_send.o
@@ -140,6 +169,8 @@ $(BUILD_DIR)/pix_nozzle_gl_receive$(EXT): src/pix_nozzle_gl_receive.cpp $(NOZZLE
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_receive.o
 	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_gl_receive.o $(NOZZLE_LIB) $(LDFLAGS)
 
+endif
+
 $(NOZZLE_LIB): $(ALL_NOZZLE_OBJS)
 	@mkdir -p $(dir $@)
 	$(AR) rcs $@ $^
@@ -151,6 +182,26 @@ $(BUILD_DIR)/%.o: %.cpp
 $(BUILD_DIR)/%.o: %.mm
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+ifeq ($(PLATFORM),windows)
+
+$(BUILD_DIR)/src/gem_stubs.o: src/gem_stubs.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+$(BUILD_DIR)/$(GEM_DIR)/src/Gem/Exception.o: $(GEM_DIR)/src/Gem/Exception.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+$(BUILD_DIR)/$(GEM_DIR)/src/RTE/Atom.o: $(GEM_DIR)/src/RTE/Atom.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+$(BUILD_DIR)/$(GEM_DIR)/src/Base/CPPExtern.o: $(GEM_DIR)/src/Base/CPPExtern.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+endif
 
 clean:
 	rm -rf $(BUILD_DIR)

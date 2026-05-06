@@ -98,8 +98,7 @@ jobs:
         shell: msys2 {0}
         run: |
           make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers \
-            PD_DLL_PATH="$(pwd)/pd-0.56-2/bin/pd.dll" \
-            GEM_DLL_PATH="$(pwd)/Gem/Gem.dll"
+            PD_DLL_PATH="$(pwd)/pd-0.56-2/bin/pd.dll"
 
       - name: Verify build artifacts (non-Windows)
         if: runner.os != 'Windows'
