@@ -95,23 +95,32 @@ void pix_nozzle_gl_send :: render(GemState *state) {
 
     NozzleTextureFormat nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM;
     switch(internal_format) {
-        case GL_RGBA8:           nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
-        case GL_RGBA8_SNORM:     nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
-        case GL_SRGB8_ALPHA8:    nozzle_fmt = NOZZLE_FORMAT_RGBA8_SRGB; break;
-        case GL_BGRA:            nozzle_fmt = NOZZLE_FORMAT_BGRA8_UNORM; break;
-        case GL_R8:              nozzle_fmt = NOZZLE_FORMAT_R8_UNORM; break;
-        case GL_RG8:             nozzle_fmt = NOZZLE_FORMAT_RG8_UNORM; break;
-        case GL_RGBA16:          nozzle_fmt = NOZZLE_FORMAT_RGBA16_UNORM; break;
-        case GL_RGBA16F:         nozzle_fmt = NOZZLE_FORMAT_RGBA16_FLOAT; break;
-        case GL_RGBA32F:         nozzle_fmt = NOZZLE_FORMAT_RGBA32_FLOAT; break;
-        case GL_R32F:            nozzle_fmt = NOZZLE_FORMAT_R32_FLOAT; break;
-        case GL_RG32F:           nozzle_fmt = NOZZLE_FORMAT_RG32_FLOAT; break;
-        case GL_R16F:            nozzle_fmt = NOZZLE_FORMAT_R16_FLOAT; break;
-        case GL_RG16F:           nozzle_fmt = NOZZLE_FORMAT_RG16_FLOAT; break;
+        case GL_RGBA8:
+        case GL_RGBA8_SNORM:
+        case GL_RGB8:
+        case GL_RGB8_SNORM:       nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
+        case GL_SRGB8_ALPHA8:
+        case GL_SRGB8:            nozzle_fmt = NOZZLE_FORMAT_RGBA8_SRGB; break;
+        case GL_BGRA:             nozzle_fmt = NOZZLE_FORMAT_BGRA8_UNORM; break;
+        case GL_R8:               nozzle_fmt = NOZZLE_FORMAT_R8_UNORM; break;
+        case GL_RG8:              nozzle_fmt = NOZZLE_FORMAT_RG8_UNORM; break;
+        case GL_RGBA16:
+        case GL_RGB16:            nozzle_fmt = NOZZLE_FORMAT_RGBA16_UNORM; break;
+        case GL_RGBA16F:
+        case GL_RGB16F:           nozzle_fmt = NOZZLE_FORMAT_RGBA16_FLOAT; break;
+        case GL_RGBA32F:
+        case GL_RGB32F:           nozzle_fmt = NOZZLE_FORMAT_RGBA32_FLOAT; break;
+        case GL_R32F:             nozzle_fmt = NOZZLE_FORMAT_R32_FLOAT; break;
+        case GL_RG32F:            nozzle_fmt = NOZZLE_FORMAT_RG32_FLOAT; break;
+        case GL_R16F:             nozzle_fmt = NOZZLE_FORMAT_R16_FLOAT; break;
+        case GL_RG16F:            nozzle_fmt = NOZZLE_FORMAT_RG16_FLOAT; break;
+        case GL_R16:
+        case GL_RG16:             nozzle_fmt = NOZZLE_FORMAT_R16_UNORM; break;
+        case GL_R16_SNORM:        nozzle_fmt = NOZZLE_FORMAT_R16_UNORM; break;
         case GL_DEPTH_COMPONENT32F:
         case GL_DEPTH32F_STENCIL8:
-                                nozzle_fmt = NOZZLE_FORMAT_DEPTH32_FLOAT; break;
-        default:                nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
+                                  nozzle_fmt = NOZZLE_FORMAT_DEPTH32_FLOAT; break;
+        default:                  nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
     }
 
     NozzleErrorCode err = nozzle_sender_publish_gl_texture(

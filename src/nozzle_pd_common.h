@@ -121,7 +121,6 @@ inline GLenum nozzle_to_gl_format(NozzleTextureFormat fmt) {
         case NOZZLE_FORMAT_R16_FLOAT:
         case NOZZLE_FORMAT_R32_FLOAT:
         case NOZZLE_FORMAT_R32_UINT:
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:
             return GL_RED;
         case NOZZLE_FORMAT_RG8_UNORM:
         case NOZZLE_FORMAT_RG16_UNORM:
@@ -131,6 +130,8 @@ inline GLenum nozzle_to_gl_format(NozzleTextureFormat fmt) {
         case NOZZLE_FORMAT_BGRA8_UNORM:
         case NOZZLE_FORMAT_BGRA8_SRGB:
             return GL_BGRA;
+        case NOZZLE_FORMAT_DEPTH32_FLOAT:
+            return GL_DEPTH_COMPONENT;
         case NOZZLE_FORMAT_RGBA8_UNORM:
         case NOZZLE_FORMAT_RGBA8_SRGB:
         case NOZZLE_FORMAT_RGBA16_UNORM:
@@ -177,18 +178,27 @@ inline NozzleTextureFormat gem_to_nozzle_format(int csize, int type) {
         switch(csize) {
             case 4: return NOZZLE_FORMAT_RGBA8_UNORM;
             case 3: return NOZZLE_FORMAT_RGBA8_UNORM;
+            case 2: return NOZZLE_FORMAT_RG8_UNORM;
             case 1: return NOZZLE_FORMAT_R8_UNORM;
+        }
+    } else if(type == GL_UNSIGNED_SHORT) {
+        switch(csize) {
+            case 4: return NOZZLE_FORMAT_RGBA16_UNORM;
+            case 2: return NOZZLE_FORMAT_RG16_UNORM;
+            case 1: return NOZZLE_FORMAT_R16_UNORM;
         }
     } else if(type == GL_FLOAT) {
         switch(csize) {
             case 4: return NOZZLE_FORMAT_RGBA32_FLOAT;
             case 3: return NOZZLE_FORMAT_RGBA32_FLOAT;
+            case 2: return NOZZLE_FORMAT_RG32_FLOAT;
             case 1: return NOZZLE_FORMAT_R32_FLOAT;
         }
     } else if(type == GL_HALF_FLOAT) {
         switch(csize) {
             case 4: return NOZZLE_FORMAT_RGBA16_FLOAT;
             case 3: return NOZZLE_FORMAT_RGBA16_FLOAT;
+            case 2: return NOZZLE_FORMAT_RG16_FLOAT;
             case 1: return NOZZLE_FORMAT_R16_FLOAT;
         }
     }
