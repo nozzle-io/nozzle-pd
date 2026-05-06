@@ -43,6 +43,21 @@
 #include "RTE/RTE.h"
 
 // ============================================================================
+// gem::Rectangle stubs  (Gem/State.h references Rectangle)
+// ============================================================================
+
+namespace gem {
+
+Rectangle::Rectangle()
+    : x1(0.f), y1(0.f), x2(1.f), y2(1.f)
+{}
+
+Rectangle::~Rectangle()
+{}
+
+} // namespace gem
+
+// ============================================================================
 // gem_register_class_setup  (from Gem/Setup.cpp - heavy deps, stubbed)
 // ============================================================================
 
