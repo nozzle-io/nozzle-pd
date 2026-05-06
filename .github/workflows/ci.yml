@@ -100,11 +100,22 @@ jobs:
           make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers \
             PD_DLL_PATH="$(pwd)/pd-0.56-2/bin/pd.dll"
 
-      - name: Verify build artifacts (non-Windows)
-        if: runner.os != 'Windows'
-        run: ls -la .build/*.pd_* 2>/dev/null || ls -la .build/*.pd_linux 2>/dev/null || echo "No externals found"
-
-      - name: Verify build artifacts (Windows)
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: ls -la .build/*.dll 2>/dev/null || echo "No externals found"
+      - name: Verify build artifacts
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            ext=".pd_darwin"
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            ext=".pd_linux"
+          else
+            ext=".dll"
+          fi
+          for name in pix_nozzle_send pix_nozzle_receive pix_nozzle_gl_send pix_nozzle_gl_receive; do
+            file=".build/${name}${ext}"
+            if [ ! -f "$file" ]; then
+              echo "ERROR: Missing $file"
+              exit 1
+            fi
+            ls -la "$file"
+          done
+          echo "All 4 externals verified"
