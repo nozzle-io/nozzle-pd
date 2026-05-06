@@ -113,22 +113,22 @@ all: $(TARGETS)
 $(BUILD_DIR)/pix_nozzle_send$(EXT): src/pix_nozzle_send.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_send.o
-	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_send.o $(NOZZLE_LIB)
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_send.o $(NOZZLE_LIB) $(LDFLAGS)
 
 $(BUILD_DIR)/pix_nozzle_receive$(EXT): src/pix_nozzle_receive.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_receive.o
-	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_receive.o $(NOZZLE_LIB)
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_receive.o $(NOZZLE_LIB) $(LDFLAGS)
 
 $(BUILD_DIR)/pix_nozzle_gl_send$(EXT): src/pix_nozzle_gl_send.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_send.o
-	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_gl_send.o $(NOZZLE_LIB)
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_gl_send.o $(NOZZLE_LIB) $(LDFLAGS)
 
 $(BUILD_DIR)/pix_nozzle_gl_receive$(EXT): src/pix_nozzle_gl_receive.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
 	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_receive.o
-	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_gl_receive.o $(NOZZLE_LIB)
+	$(CXX) -o $@ $(BUILD_DIR)/pix_nozzle_gl_receive.o $(NOZZLE_LIB) $(LDFLAGS)
 
 $(NOZZLE_LIB): $(ALL_NOZZLE_OBJS)
 	@mkdir -p $(dir $@)
