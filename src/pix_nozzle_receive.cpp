@@ -7,6 +7,7 @@ extern "C" {
 #include "Gem/State.h"
 #include "Gem/Image.h"
 #include "Gem/Cache.h"
+#include "nozzle_pd_common.h"
 
 #include <cstring>
 #include <string>
@@ -70,82 +71,6 @@ void pix_nozzle_receive :: nameMess(t_symbol *name) {
     m_connected = false;
 }
 
-static int nozzle_to_gem_csize(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return 1;
-        case NOZZLE_FORMAT_RG8_UNORM:        return 2;
-        case NOZZLE_FORMAT_RGBA8_UNORM:      return 4;
-        case NOZZLE_FORMAT_BGRA8_UNORM:      return 4;
-        case NOZZLE_FORMAT_RGBA8_SRGB:       return 4;
-        case NOZZLE_FORMAT_BGRA8_SRGB:       return 4;
-        case NOZZLE_FORMAT_R16_UNORM:        return 2;
-        case NOZZLE_FORMAT_RG16_UNORM:       return 4;
-        case NOZZLE_FORMAT_RGBA16_UNORM:     return 8;
-        case NOZZLE_FORMAT_R16_FLOAT:        return 2;
-        case NOZZLE_FORMAT_RG16_FLOAT:       return 4;
-        case NOZZLE_FORMAT_RGBA16_FLOAT:     return 8;
-        case NOZZLE_FORMAT_R32_FLOAT:        return 4;
-        case NOZZLE_FORMAT_RG32_FLOAT:       return 8;
-        case NOZZLE_FORMAT_RGBA32_FLOAT:     return 16;
-        case NOZZLE_FORMAT_R32_UINT:         return 4;
-        case NOZZLE_FORMAT_RGBA32_UINT:      return 16;
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:    return 4;
-        default:                             return 4;
-    }
-}
-
-static int nozzle_to_gem_format(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return GL_LUMINANCE;
-        case NOZZLE_FORMAT_RG8_UNORM:        return GL_LUMINANCE_ALPHA;
-        case NOZZLE_FORMAT_RGBA8_UNORM:      return GL_RGBA;
-        case NOZZLE_FORMAT_BGRA8_UNORM:      return GL_RGBA;
-        case NOZZLE_FORMAT_RGBA8_SRGB:       return GL_RGBA;
-        case NOZZLE_FORMAT_BGRA8_SRGB:       return GL_RGBA;
-        case NOZZLE_FORMAT_R16_UNORM:
-        case NOZZLE_FORMAT_RG16_UNORM:
-        case NOZZLE_FORMAT_RGBA16_UNORM:
-        case NOZZLE_FORMAT_R32_FLOAT:
-        case NOZZLE_FORMAT_RG32_FLOAT:
-        case NOZZLE_FORMAT_RGBA32_FLOAT:
-        case NOZZLE_FORMAT_R32_UINT:
-        case NOZZLE_FORMAT_RGBA32_UINT:
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:    return GL_RGBA;
-        case NOZZLE_FORMAT_R16_FLOAT:
-        case NOZZLE_FORMAT_RG16_FLOAT:
-        case NOZZLE_FORMAT_RGBA16_FLOAT:     return GL_RGBA;
-        default:                             return GL_RGBA;
-    }
-}
-
-static int nozzle_to_gem_type(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:
-        case NOZZLE_FORMAT_RG8_UNORM:
-        case NOZZLE_FORMAT_RGBA8_UNORM:
-        case NOZZLE_FORMAT_BGRA8_UNORM:
-        case NOZZLE_FORMAT_RGBA8_SRGB:
-        case NOZZLE_FORMAT_BGRA8_SRGB:
-            return GL_UNSIGNED_BYTE;
-        case NOZZLE_FORMAT_R16_UNORM:
-        case NOZZLE_FORMAT_RG16_UNORM:
-        case NOZZLE_FORMAT_RGBA16_UNORM:
-        case NOZZLE_FORMAT_R32_UINT:
-        case NOZZLE_FORMAT_RGBA32_UINT:
-            return GL_UNSIGNED_SHORT;
-        case NOZZLE_FORMAT_R16_FLOAT:
-        case NOZZLE_FORMAT_RG16_FLOAT:
-        case NOZZLE_FORMAT_RGBA16_FLOAT:
-        case NOZZLE_FORMAT_R32_FLOAT:
-        case NOZZLE_FORMAT_RG32_FLOAT:
-        case NOZZLE_FORMAT_RGBA32_FLOAT:
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:
-            return GL_FLOAT;
-        default:
-            return GL_UNSIGNED_BYTE;
-    }
-}
-
 void pix_nozzle_receive :: render(GemState *state) {
     if(!m_receiver) {
         NozzleReceiverDesc desc{};
@@ -192,9 +117,9 @@ void pix_nozzle_receive :: render(GemState *state) {
             m_pixBlock.image.clear();
         }
 
-        int csize = nozzle_to_gem_csize(finfo.format);
-        int format = nozzle_to_gem_format(finfo.format);
-        int type = nozzle_to_gem_type(finfo.format);
+        int csize = nozzle_pd::nozzle_to_gem_csize(finfo.format);
+        int format = nozzle_pd::nozzle_to_gem_format(finfo.format);
+        int type = nozzle_pd::nozzle_to_gem_type(finfo.format);
 
         m_pixBlock.image.xsize = (int)w;
         m_pixBlock.image.ysize = (int)h;

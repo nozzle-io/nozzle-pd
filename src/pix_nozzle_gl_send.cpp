@@ -6,6 +6,7 @@ extern "C" {
 
 #include "Gem/State.h"
 #include "Gem/Cache.h"
+#include "nozzle_pd_common.h"
 
 #include <string>
 
@@ -59,7 +60,7 @@ void pix_nozzle_gl_send :: render(GemState *state) {
         NozzleSenderDesc desc{};
         desc.name = m_sender_name->s_name;
         desc.application_name = "pix_nozzle_gl_send";
-        desc.ring_buffer_size = 3;
+        desc.ring_buffer_size = nozzle_pd::k_default_ring_buffer_size;
 
         NozzleErrorCode err = nozzle_sender_create(&desc, &m_sender);
         if(err != NOZZLE_OK) {
@@ -109,7 +110,7 @@ void pix_nozzle_gl_send :: render(GemState *state) {
         case GL_RG16F:           nozzle_fmt = NOZZLE_FORMAT_RG16_FLOAT; break;
         case GL_DEPTH_COMPONENT32F:
         case GL_DEPTH32F_STENCIL8:
-                               nozzle_fmt = NOZZLE_FORMAT_DEPTH32_FLOAT; break;
+                                nozzle_fmt = NOZZLE_FORMAT_DEPTH32_FLOAT; break;
         default:                nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
     }
 

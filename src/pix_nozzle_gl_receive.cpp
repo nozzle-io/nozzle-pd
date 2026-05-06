@@ -7,6 +7,7 @@ extern "C" {
 #include "Gem/State.h"
 #include "Gem/Image.h"
 #include "Gem/Cache.h"
+#include "nozzle_pd_common.h"
 
 #include <string>
 
@@ -81,118 +82,6 @@ void pix_nozzle_gl_receive :: nameMess(t_symbol *name) {
     m_connected = false;
 }
 
-static int nozzle_to_gem_csize(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return 1;
-        case NOZZLE_FORMAT_RG8_UNORM:        return 2;
-        case NOZZLE_FORMAT_RGBA8_UNORM:      return 4;
-        case NOZZLE_FORMAT_BGRA8_UNORM:      return 4;
-        case NOZZLE_FORMAT_RGBA8_SRGB:       return 4;
-        case NOZZLE_FORMAT_BGRA8_SRGB:       return 4;
-        case NOZZLE_FORMAT_R16_UNORM:        return 2;
-        case NOZZLE_FORMAT_RG16_UNORM:       return 4;
-        case NOZZLE_FORMAT_RGBA16_UNORM:     return 8;
-        case NOZZLE_FORMAT_R16_FLOAT:        return 2;
-        case NOZZLE_FORMAT_RG16_FLOAT:       return 4;
-        case NOZZLE_FORMAT_RGBA16_FLOAT:     return 8;
-        case NOZZLE_FORMAT_R32_FLOAT:        return 4;
-        case NOZZLE_FORMAT_RG32_FLOAT:       return 8;
-        case NOZZLE_FORMAT_RGBA32_FLOAT:     return 16;
-        case NOZZLE_FORMAT_R32_UINT:         return 4;
-        case NOZZLE_FORMAT_RGBA32_UINT:      return 16;
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:    return 4;
-        default:                             return 4;
-    }
-}
-
-static int nozzle_to_gem_format(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return GL_LUMINANCE;
-        case NOZZLE_FORMAT_RG8_UNORM:        return GL_LUMINANCE_ALPHA;
-        case NOZZLE_FORMAT_RGBA8_UNORM:
-        case NOZZLE_FORMAT_BGRA8_UNORM:
-        case NOZZLE_FORMAT_RGBA8_SRGB:
-        case NOZZLE_FORMAT_BGRA8_SRGB:
-        case NOZZLE_FORMAT_R16_UNORM:
-        case NOZZLE_FORMAT_RG16_UNORM:
-        case NOZZLE_FORMAT_RGBA16_UNORM:
-        case NOZZLE_FORMAT_R32_FLOAT:
-        case NOZZLE_FORMAT_RG32_FLOAT:
-        case NOZZLE_FORMAT_RGBA32_FLOAT:
-        case NOZZLE_FORMAT_R32_UINT:
-        case NOZZLE_FORMAT_RGBA32_UINT:
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:
-        case NOZZLE_FORMAT_R16_FLOAT:
-        case NOZZLE_FORMAT_RG16_FLOAT:
-        case NOZZLE_FORMAT_RGBA16_FLOAT:
-        default:                             return GL_RGBA;
-    }
-}
-
-static int nozzle_to_gem_type(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:
-        case NOZZLE_FORMAT_RG8_UNORM:
-        case NOZZLE_FORMAT_RGBA8_UNORM:
-        case NOZZLE_FORMAT_BGRA8_UNORM:
-        case NOZZLE_FORMAT_RGBA8_SRGB:
-        case NOZZLE_FORMAT_BGRA8_SRGB:
-            return GL_UNSIGNED_BYTE;
-        case NOZZLE_FORMAT_R16_UNORM:
-        case NOZZLE_FORMAT_RG16_UNORM:
-        case NOZZLE_FORMAT_RGBA16_UNORM:
-        case NOZZLE_FORMAT_R32_UINT:
-        case NOZZLE_FORMAT_RGBA32_UINT:
-            return GL_UNSIGNED_SHORT;
-        case NOZZLE_FORMAT_R16_FLOAT:
-        case NOZZLE_FORMAT_RG16_FLOAT:
-        case NOZZLE_FORMAT_RGBA16_FLOAT:
-        case NOZZLE_FORMAT_R32_FLOAT:
-        case NOZZLE_FORMAT_RG32_FLOAT:
-        case NOZZLE_FORMAT_RGBA32_FLOAT:
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:
-            return GL_FLOAT;
-        default:
-            return GL_UNSIGNED_BYTE;
-    }
-}
-
-static GLenum nozzle_to_gl_internal_format(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return GL_R8;
-        case NOZZLE_FORMAT_RG8_UNORM:        return GL_RG8;
-        case NOZZLE_FORMAT_RGBA8_UNORM:      return GL_RGBA8;
-        case NOZZLE_FORMAT_BGRA8_UNORM:      return GL_RGBA8;
-        case NOZZLE_FORMAT_RGBA8_SRGB:       return GL_SRGB8_ALPHA8;
-        case NOZZLE_FORMAT_BGRA8_SRGB:       return GL_SRGB8_ALPHA8;
-        case NOZZLE_FORMAT_R16_UNORM:        return GL_R16;
-        case NOZZLE_FORMAT_RG16_UNORM:       return GL_RG16;
-        case NOZZLE_FORMAT_RGBA16_UNORM:     return GL_RGBA16;
-        case NOZZLE_FORMAT_R16_FLOAT:        return GL_R16F;
-        case NOZZLE_FORMAT_RG16_FLOAT:       return GL_RG16F;
-        case NOZZLE_FORMAT_RGBA16_FLOAT:     return GL_RGBA16F;
-        case NOZZLE_FORMAT_R32_FLOAT:        return GL_R32F;
-        case NOZZLE_FORMAT_RG32_FLOAT:       return GL_RG32F;
-        case NOZZLE_FORMAT_RGBA32_FLOAT:     return GL_RGBA32F;
-        case NOZZLE_FORMAT_R32_UINT:         return GL_R32UI;
-        case NOZZLE_FORMAT_RGBA32_UINT:      return GL_RGBA32UI;
-        case NOZZLE_FORMAT_DEPTH32_FLOAT:    return GL_DEPTH_COMPONENT32F;
-        default:                             return GL_RGBA8;
-    }
-}
-
-static GLenum nozzle_to_gl_format(NozzleTextureFormat fmt) {
-    switch(fmt) {
-        case NOZZLE_FORMAT_R8_UNORM:         return GL_RED;
-        case NOZZLE_FORMAT_RG8_UNORM:        return GL_RG;
-        case NOZZLE_FORMAT_RGBA8_UNORM:      return GL_RGBA;
-        case NOZZLE_FORMAT_BGRA8_UNORM:      return GL_BGRA;
-        case NOZZLE_FORMAT_RGBA8_SRGB:       return GL_RGBA;
-        case NOZZLE_FORMAT_BGRA8_SRGB:       return GL_BGRA;
-        default:                             return GL_RGBA;
-    }
-}
-
 void pix_nozzle_gl_receive :: render(GemState *state) {
     if(!m_receiver) {
         NozzleReceiverDesc desc{};
@@ -235,18 +124,9 @@ void pix_nozzle_gl_receive :: render(GemState *state) {
         glGenTextures(1, &m_gl_texture);
         glBindTexture(GL_TEXTURE_2D, m_gl_texture);
 
-        GLenum internal_fmt = nozzle_to_gl_internal_format(finfo.format);
-        GLenum gl_fmt = nozzle_to_gl_format(finfo.format);
-        GLenum gl_type = GL_UNSIGNED_BYTE;
-        if(finfo.format == NOZZLE_FORMAT_RGBA16_FLOAT ||
-           finfo.format == NOZZLE_FORMAT_R16_FLOAT ||
-           finfo.format == NOZZLE_FORMAT_RG16_FLOAT) {
-            gl_type = GL_HALF_FLOAT;
-        } else if(finfo.format == NOZZLE_FORMAT_RGBA32_FLOAT ||
-                  finfo.format == NOZZLE_FORMAT_R32_FLOAT ||
-                  finfo.format == NOZZLE_FORMAT_RG32_FLOAT) {
-            gl_type = GL_FLOAT;
-        }
+        GLenum internal_fmt = nozzle_pd::nozzle_to_gl_internal_format(finfo.format);
+        GLenum gl_fmt = nozzle_pd::nozzle_to_gl_format(finfo.format);
+        GLenum gl_type = nozzle_pd::nozzle_to_gl_type(finfo.format);
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, (GLsizei)w, (GLsizei)h,
                      0, gl_fmt, gl_type, nullptr);
@@ -272,9 +152,9 @@ void pix_nozzle_gl_receive :: render(GemState *state) {
 
     nozzle_frame_release(frame);
 
-    int csize = nozzle_to_gem_csize(finfo.format);
-    int format = nozzle_to_gem_format(finfo.format);
-    int type = nozzle_to_gem_type(finfo.format);
+    int csize = nozzle_pd::nozzle_to_gem_csize(finfo.format);
+    int format = nozzle_pd::nozzle_to_gem_format(finfo.format);
+    int type = nozzle_pd::nozzle_to_gem_type(finfo.format);
 
     if(!m_pix_allocated || w != m_last_width || h != m_last_height) {
         if(m_pix_allocated) {

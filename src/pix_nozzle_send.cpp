@@ -6,6 +6,7 @@ extern "C" {
 
 #include "Gem/State.h"
 #include "Gem/Cache.h"
+#include "nozzle_pd_common.h"
 
 #include <cstring>
 #include <string>
@@ -63,23 +64,6 @@ void pix_nozzle_send :: nameMess(t_symbol *name) {
     }
 }
 
-static NozzleTextureFormat gem_to_nozzle_format(int csize, int type) {
-    if(type == GL_UNSIGNED_BYTE) {
-        switch(csize) {
-            case 4: return NOZZLE_FORMAT_RGBA8_UNORM;
-            case 3: return NOZZLE_FORMAT_RGBA8_UNORM;
-            case 1: return NOZZLE_FORMAT_R8_UNORM;
-        }
-    } else if(type == GL_FLOAT) {
-        switch(csize) {
-            case 4: return NOZZLE_FORMAT_RGBA32_FLOAT;
-            case 3: return NOZZLE_FORMAT_RGBA32_FLOAT;
-            case 1: return NOZZLE_FORMAT_R32_FLOAT;
-        }
-    }
-    return NOZZLE_FORMAT_RGBA8_UNORM;
-}
-
 void pix_nozzle_send :: render(GemState *state) {
     pixBlock *pb = nullptr;
     state->get(GemState::_PIX, pb);
@@ -92,7 +76,7 @@ void pix_nozzle_send :: render(GemState *state) {
         NozzleSenderDesc desc{};
         desc.name = m_sender_name->s_name;
         desc.application_name = "pix_nozzle_send";
-        desc.ring_buffer_size = 3;
+        desc.ring_buffer_size = nozzle_pd::k_default_ring_buffer_size;
 
         NozzleErrorCode err = nozzle_sender_create(&desc, &m_sender);
         if(err != NOZZLE_OK) {
@@ -102,7 +86,7 @@ void pix_nozzle_send :: render(GemState *state) {
         }
     }
 
-    NozzleTextureFormat fmt = gem_to_nozzle_format(img.csize, img.type);
+    NozzleTextureFormat fmt = nozzle_pd::gem_to_nozzle_format(img.csize, img.type);
 
     NozzleFrame *frame = nullptr;
     NozzleErrorCode err = nozzle_sender_acquire_writable_frame(
