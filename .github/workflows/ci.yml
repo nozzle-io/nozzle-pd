@@ -42,8 +42,19 @@ jobs:
           install: >-
             make
             git
+            unzip
+            curl
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-binutils
+
+      - name: Download Pd and GEM (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          curl -sL -o pd-msw.zip "http://msp.ucsd.edu/Software/pd-0.56-2.msw.zip"
+          unzip -q pd-msw.zip
+          curl -sL -o gem-win.dek "https://puredata.info/downloads/gem/releases/0.94/Gem%5Bv0.94%5D%28Windows-amd64-32%29.dek"
+          unzip -q gem-win.dek
 
       - name: Prepare GEM headers
         if: runner.os != 'Windows'
@@ -52,12 +63,12 @@ jobs:
           cat > deps/gem-headers/src/Gem/GemGLconfig.h << 'EOF'
           #ifndef _GEM_GL_CONFIG_H_
           #define _GEM_GL_CONFIG_H_
-          /* #undef GEM_MULTICONEXT */
+          /* #undef GEM_MULTICONTEXT */
           /* #undef GEM_HAVE_GLU */
           #endif
           EOF
 
-      - name: Prepare GEM headers (Windows)
+      - name: Prepare headers and verify DLLs (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
@@ -70,6 +81,8 @@ jobs:
           #endif
           EOF
           git clone --depth 1 https://github.com/pure-data/pure-data.git deps/pd-headers
+          echo "Pd DLL: $(ls pd-0.56-2/bin/pd.dll)"
+          echo "Gem DLL: $(ls Gem/Gem.dll)"
 
       - name: Build (non-Windows)
         if: runner.os != 'Windows'
@@ -83,7 +96,10 @@ jobs:
       - name: Build (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        run: make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers
+        run: |
+          make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers \
+            PD_DLL_PATH="$(pwd)/pd-0.56-2/bin/pd.dll" \
+            GEM_DLL_PATH="$(pwd)/Gem/Gem.dll"
 
       - name: Verify build artifacts (non-Windows)
         if: runner.os != 'Windows'

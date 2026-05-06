@@ -75,7 +75,17 @@ ifeq ($(PLATFORM),windows)
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_backend.cpp \
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_texture.cpp \
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_sync.cpp
-	LDFLAGS := -shared -ld3d11 -ldxgi -lopengl32 -lbcrypt -lstdc++
+	PD_DLL_PATH ?=
+	GEM_DLL_PATH ?=
+	LDFLAGS := -shared -static-libgcc -static-libstdc++ \
+		-Wl,--enable-auto-import \
+		-ld3d11 -ldxgi -lopengl32 -lbcrypt
+ ifdef PD_DLL_PATH
+	LDFLAGS += -Wl,--enable-auto-import "$(PD_DLL_PATH)"
+ endif
+ ifdef GEM_DLL_PATH
+	LDFLAGS += -Wl,--enable-auto-import "$(GEM_DLL_PATH)"
+ endif
 	EXT := .dll
 endif
 
