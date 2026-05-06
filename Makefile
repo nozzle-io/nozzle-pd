@@ -1,11 +1,14 @@
 NOZZLE_DIR := deps/nozzle
 PLOG_DIR := $(NOZZLE_DIR)/libs/plog/include
 BUILD_DIR := .build
+GEM_DIR ?=
+PD_DIR ?=
 
 CXX := c++
 AR := ar
 
 CXXFLAGS := -std=c++17 -fno-exceptions -fno-rtti -O2 -fPIC
+PD_CXXFLAGS := -std=c++17 -O2 -fPIC
 
 UNAME_S := $(shell uname -s)
 ifeq ($(OS),Windows_NT)
@@ -54,8 +57,6 @@ ifeq ($(PLATFORM),macos)
 		-framework Metal -framework IOSurface -framework Foundation \
 		-framework Accelerate -framework OpenGL -framework CoreVideo \
 		-lobjc -lstdc++
-	PD_CFLAGS := $(shell pkg-config --cflags pd 2>/dev/null || echo "-I/usr/local/include/pd")
-	GEM_CFLAGS := $(shell pkg-config --cflags Gem 2>/dev/null || echo "-I/usr/local/include/Gem")
 	EXT := .pd_darwin
 endif
 
@@ -65,8 +66,6 @@ ifeq ($(PLATFORM),linux)
 		$(NOZZLE_DIR)/src/backends/linux/linux_texture.cpp
 	LDFLAGS := -shared \
 		-ldrm -lgbm -lEGL -lGL -lstdc++
-	PD_CFLAGS := $(shell pkg-config --cflags pd 2>/dev/null || echo "-I/usr/include/pd")
-	GEM_CFLAGS := $(shell pkg-config --cflags Gem 2>/dev/null || echo "-I/usr/include/Gem")
 	EXT := .pd_linux
 endif
 
@@ -77,13 +76,23 @@ ifeq ($(PLATFORM),windows)
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_texture.cpp \
 		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_sync.cpp
 	LDFLAGS := -shared -ld3d11 -ldxgi -lopengl32 -lbcrypt -lstdc++
-	PD_CFLAGS := $(shell pkg-config --cflags pd 2>/dev/null)
-	GEM_CFLAGS := $(shell pkg-config --cflags Gem 2>/dev/null)
 	EXT := .dll
 endif
 
+ifeq ($(PD_DIR),)
+  PD_CFLAGS_INTERNAL := $(shell pkg-config --cflags pd 2>/dev/null || echo "-I/usr/local/include/pd")
+else
+  PD_CFLAGS_INTERNAL := -I$(PD_DIR)/src
+endif
+
+ifeq ($(GEM_DIR),)
+  GEM_CFLAGS_INTERNAL := $(shell pkg-config --cflags Gem 2>/dev/null || echo "-I/usr/local/include/Gem")
+else
+  GEM_CFLAGS_INTERNAL := -I$(GEM_DIR)/src
+endif
+
 INCLUDES := -I$(NOZZLE_DIR)/include -I$(NOZZLE_DIR)/src -I$(PLOG_DIR) \
-	$(PD_CFLAGS) $(GEM_CFLAGS)
+	$(PD_CFLAGS_INTERNAL) $(GEM_CFLAGS_INTERNAL)
 ifeq ($(PLATFORM),linux)
 	INCLUDES += -I/usr/include/libdrm
 endif
@@ -103,22 +112,22 @@ all: $(TARGETS)
 
 $(BUILD_DIR)/pix_nozzle_send$(EXT): src/pix_nozzle_send.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_send.o
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_send.o
 	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_send.o $(NOZZLE_LIB)
 
 $(BUILD_DIR)/pix_nozzle_receive$(EXT): src/pix_nozzle_receive.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_receive.o
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_receive.o
 	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_receive.o $(NOZZLE_LIB)
 
 $(BUILD_DIR)/pix_nozzle_gl_send$(EXT): src/pix_nozzle_gl_send.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_send.o
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_send.o
 	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_gl_send.o $(NOZZLE_LIB)
 
 $(BUILD_DIR)/pix_nozzle_gl_receive$(EXT): src/pix_nozzle_gl_receive.cpp $(NOZZLE_LIB)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_receive.o
+	$(CXX) $(PD_CXXFLAGS) $(INCLUDES) -c $< -o $(BUILD_DIR)/pix_nozzle_gl_receive.o
 	$(CXX) $(LDFLAGS) -o $@ $(BUILD_DIR)/pix_nozzle_gl_receive.o $(NOZZLE_LIB)
 
 $(NOZZLE_LIB): $(ALL_NOZZLE_OBJS)

@@ -9,13 +9,11 @@ extern "C" {
 
 #include <string>
 
-CPPEXTERN_HEADER(pix_nozzle_gl_send, GemBase);
-
-class pix_nozzle_gl_send : public GemBase {
+class GEM_EXTERN pix_nozzle_gl_send : public GemBase {
     CPPEXTERN_HEADER(pix_nozzle_gl_send, GemBase);
 
 public:
-    pix_nozzle_gl_send(t_symbol *s, int argc, t_atom *argv);
+    pix_nozzle_gl_send(int argc, t_atom *argv);
     virtual ~pix_nozzle_gl_send();
 
     virtual void render(GemState *state);
@@ -24,8 +22,6 @@ protected:
     void nameMess(t_symbol *name);
 
 private:
-    static void obj_setupCallback(t_class *classPtr);
-
     NozzleSender *m_sender;
     t_symbol *m_sender_name;
     uint64_t m_frame_count;
@@ -33,7 +29,7 @@ private:
 
 CPPEXTERN_NEW_WITH_GIMME(pix_nozzle_gl_send);
 
-pix_nozzle_gl_send :: pix_nozzle_gl_send(t_symbol *s, int argc, t_atom *argv)
+pix_nozzle_gl_send :: pix_nozzle_gl_send(int argc, t_atom *argv)
     : m_sender(nullptr)
     , m_sender_name(gensym("nozzle_sender"))
     , m_frame_count(0)
@@ -75,7 +71,7 @@ void pix_nozzle_gl_send :: render(GemState *state) {
 
     int tex_id = 0;
     int tex_target = GL_TEXTURE_2D;
-    state->get(GemState::_TEX_ID, tex_id);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &tex_id);
 
     if(tex_id <= 0) {
         return;
@@ -101,7 +97,6 @@ void pix_nozzle_gl_send :: render(GemState *state) {
         case GL_RGBA8:           nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
         case GL_RGBA8_SNORM:     nozzle_fmt = NOZZLE_FORMAT_RGBA8_UNORM; break;
         case GL_SRGB8_ALPHA8:    nozzle_fmt = NOZZLE_FORMAT_RGBA8_SRGB; break;
-        case GL_BGRA8_EXT:
         case GL_BGRA:            nozzle_fmt = NOZZLE_FORMAT_BGRA8_UNORM; break;
         case GL_R8:              nozzle_fmt = NOZZLE_FORMAT_R8_UNORM; break;
         case GL_RG8:             nozzle_fmt = NOZZLE_FORMAT_RG8_UNORM; break;

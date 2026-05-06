@@ -5,17 +5,16 @@ extern "C" {
 }
 
 #include "Gem/State.h"
+#include "Gem/Image.h"
 #include "Gem/Cache.h"
 
 #include <string>
 
-CPPEXTERN_HEADER(pix_nozzle_gl_receive, GemBase);
-
-class pix_nozzle_gl_receive : public GemBase {
+class GEM_EXTERN pix_nozzle_gl_receive : public GemBase {
     CPPEXTERN_HEADER(pix_nozzle_gl_receive, GemBase);
 
 public:
-    pix_nozzle_gl_receive(t_symbol *s, int argc, t_atom *argv);
+    pix_nozzle_gl_receive(int argc, t_atom *argv);
     virtual ~pix_nozzle_gl_receive();
 
     virtual void render(GemState *state);
@@ -25,8 +24,6 @@ protected:
     void nameMess(t_symbol *name);
 
 private:
-    static void obj_setupCallback(t_class *classPtr);
-
     NozzleReceiver *m_receiver;
     t_symbol *m_sender_name;
     GLuint m_gl_texture;
@@ -42,7 +39,7 @@ private:
 
 CPPEXTERN_NEW_WITH_GIMME(pix_nozzle_gl_receive);
 
-pix_nozzle_gl_receive :: pix_nozzle_gl_receive(t_symbol *s, int argc, t_atom *argv)
+pix_nozzle_gl_receive :: pix_nozzle_gl_receive(int argc, t_atom *argv)
     : m_receiver(nullptr)
     , m_sender_name(gensym("nozzle_sender"))
     , m_gl_texture(0)
@@ -297,7 +294,6 @@ void pix_nozzle_gl_receive :: render(GemState *state) {
 
     m_pixBlock.newimage = 1;
     state->set(GemState::_PIX, &m_pixBlock);
-    state->set(GemState::_TEX_ID, (int)m_gl_texture);
 }
 
 void pix_nozzle_gl_receive :: postrender(GemState *state) {

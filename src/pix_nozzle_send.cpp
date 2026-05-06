@@ -10,13 +10,11 @@ extern "C" {
 #include <cstring>
 #include <string>
 
-CPPEXTERN_HEADER(pix_nozzle_send, GemPixObj);
-
-class pix_nozzle_send : public GemPixObj {
+class GEM_EXTERN pix_nozzle_send : public GemPixObj {
     CPPEXTERN_HEADER(pix_nozzle_send, GemPixObj);
 
 public:
-    pix_nozzle_send(t_symbol *s, int argc, t_atom *argv);
+    pix_nozzle_send(int argc, t_atom *argv);
     virtual ~pix_nozzle_send();
 
     virtual void render(GemState *state);
@@ -26,8 +24,6 @@ protected:
     void nameMess(t_symbol *name);
 
 private:
-    static void obj_setupCallback(t_class *classPtr);
-
     NozzleSender *m_sender;
     t_symbol *m_sender_name;
     NozzleFrame *m_frame;
@@ -37,7 +33,7 @@ private:
 
 CPPEXTERN_NEW_WITH_GIMME(pix_nozzle_send);
 
-pix_nozzle_send :: pix_nozzle_send(t_symbol *s, int argc, t_atom *argv)
+pix_nozzle_send :: pix_nozzle_send(int argc, t_atom *argv)
     : m_sender(nullptr)
     , m_sender_name(gensym("nozzle_sender"))
     , m_frame(nullptr)

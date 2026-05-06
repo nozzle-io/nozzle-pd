@@ -26,15 +26,32 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             libdrm-dev libgbm-dev libegl-dev libgl-dev \
-            puredata-dev gem
+            puredata-dev
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install puredata
+          git clone --depth 1 https://github.com/pure-data/pure-data.git deps/pd-headers
+
+      - name: Prepare GEM headers
+        run: |
+          git clone --depth 1 https://github.com/umlaeute/Gem.git deps/gem-headers
+          # Generate minimal GemGLconfig.h (GEM build-generated file)
+          cat > deps/gem-headers/src/Gem/GemGLconfig.h << 'EOF'
+          #ifndef _GEM_GL_CONFIG_H_
+          #define _GEM_GL_CONFIG_H_
+          /* #undef GEM_MULTICONTEXT */
+          /* #undef GEM_HAVE_GLU */
+          #endif
+          EOF
 
       - name: Build
-        run: make
+        run: |
+          ARGS="GEM_DIR=deps/gem-headers"
+          if [ "$(uname -s)" = "Darwin" ]; then
+            ARGS="$ARGS PD_DIR=deps/pd-headers"
+          fi
+          make $ARGS
 
       - name: Verify build artifacts
         run: ls -la .build/*.pd_* 2>/dev/null || ls -la .build/*.pd_linux 2>/dev/null || echo "No externals found"
