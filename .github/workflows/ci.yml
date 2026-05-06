@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
@@ -33,10 +33,35 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/pure-data/pure-data.git deps/pd-headers
 
+      - name: Setup MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-binutils
+
       - name: Prepare GEM headers
+        if: runner.os != 'Windows'
         run: |
           git clone --depth 1 https://github.com/umlaeute/Gem.git deps/gem-headers
-          # Generate minimal GemGLconfig.h (GEM build-generated file)
+          cat > deps/gem-headers/src/Gem/GemGLconfig.h << 'EOF'
+          #ifndef _GEM_GL_CONFIG_H_
+          #define _GEM_GL_CONFIG_H_
+          /* #undef GEM_MULTICONEXT */
+          /* #undef GEM_HAVE_GLU */
+          #endif
+          EOF
+
+      - name: Prepare GEM headers (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          git clone --depth 1 https://github.com/umlaeute/Gem.git deps/gem-headers
           cat > deps/gem-headers/src/Gem/GemGLconfig.h << 'EOF'
           #ifndef _GEM_GL_CONFIG_H_
           #define _GEM_GL_CONFIG_H_
@@ -44,8 +69,10 @@ jobs:
           /* #undef GEM_HAVE_GLU */
           #endif
           EOF
+          git clone --depth 1 https://github.com/pure-data/pure-data.git deps/pd-headers
 
-      - name: Build
+      - name: Build (non-Windows)
+        if: runner.os != 'Windows'
         run: |
           ARGS="GEM_DIR=deps/gem-headers"
           if [ "$(uname -s)" = "Darwin" ]; then
@@ -53,5 +80,16 @@ jobs:
           fi
           make $ARGS
 
-      - name: Verify build artifacts
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers
+
+      - name: Verify build artifacts (non-Windows)
+        if: runner.os != 'Windows'
         run: ls -la .build/*.pd_* 2>/dev/null || ls -la .build/*.pd_linux 2>/dev/null || echo "No externals found"
+
+      - name: Verify build artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: ls -la .build/*.dll 2>/dev/null || echo "No externals found"
