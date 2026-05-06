@@ -1,0 +1,3 @@
+.build/
+deps/gem-headers/
+deps/pd-headers/
