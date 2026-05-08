@@ -77,6 +77,8 @@ void pix_nozzle_send :: render(GemState *state) {
         desc.name = m_sender_name->s_name;
         desc.application_name = "pix_nozzle_send";
         desc.ring_buffer_size = nozzle_pd::k_default_ring_buffer_size;
+    desc.fallback_flags_valid = 1;
+    desc.fallback_flags = NOZZLE_FALLBACK_SAFE_DEFAULTS;
 
         NozzleErrorCode err = nozzle_sender_create(&desc, &m_sender);
         if(err != NOZZLE_OK) {
