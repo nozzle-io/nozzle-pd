@@ -11,6 +11,18 @@ extern "C" {
 #include <cstring>
 #include <string>
 
+namespace {
+
+struct nozzle_frame_guard {
+    NozzleFrame *frame{};
+    explicit nozzle_frame_guard(NozzleFrame *f) : frame(f) {}
+    ~nozzle_frame_guard() { if(frame) nozzle_frame_release(frame); }
+    nozzle_frame_guard(const nozzle_frame_guard &) = delete;
+    nozzle_frame_guard &operator=(const nozzle_frame_guard &) = delete;
+};
+
+} // namespace
+
 class GEM_EXTERN pix_nozzle_send : public GemPixObj {
     CPPEXTERN_HEADER(pix_nozzle_send, GemPixObj);
 
@@ -96,12 +108,13 @@ void pix_nozzle_send :: render(GemState *state) {
     if(err != NOZZLE_OK || !frame) {
         return;
     }
+    nozzle_frame_guard frame_guard{frame};
 
     NozzleMappedPixels mapped{};
     err = nozzle_frame_lock_writable_pixels_with_origin(
         frame, NOZZLE_ORIGIN_TOP_LEFT, &mapped);
     if(err != NOZZLE_OK) {
-        nozzle_frame_release(frame);
+        (void)nozzle_sender_discard_frame(m_sender, frame);
         return;
     }
 
@@ -136,9 +149,7 @@ void pix_nozzle_send :: render(GemState *state) {
 
     err = nozzle_frame_unlock_writable_pixels_checked(frame);
     if(err != NOZZLE_OK) {
-        /* Commit rejects failed-unlock frames and releases the sender slot. */
-        (void)nozzle_sender_commit_frame(m_sender, frame);
-        nozzle_frame_release(frame);
+        (void)nozzle_sender_discard_frame(m_sender, frame);
         return;
     }
 
