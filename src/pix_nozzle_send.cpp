@@ -134,7 +134,13 @@ void pix_nozzle_send :: render(GemState *state) {
         }
     }
 
-    nozzle_frame_unlock_writable_pixels(frame);
+    err = nozzle_frame_unlock_writable_pixels_checked(frame);
+    if(err != NOZZLE_OK) {
+        /* Commit rejects failed-unlock frames and releases the sender slot. */
+        (void)nozzle_sender_commit_frame(m_sender, frame);
+        nozzle_frame_release(frame);
+        return;
+    }
 
     err = nozzle_sender_commit_frame(m_sender, frame);
     if(err == NOZZLE_OK) {
