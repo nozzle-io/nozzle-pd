@@ -111,7 +111,7 @@ Messages:
 
 - C++17 compiler
 - PureData with GEM
-- macOS 12+ / Linux
+- macOS 12+ / Linux / Windows
 
 ## License
 
