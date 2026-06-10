@@ -35,6 +35,7 @@ COMMON_SRCS := \
 	$(NOZZLE_DIR)/src/common/format_convert_sse2.cpp \
 	$(NOZZLE_DIR)/src/common/format_convert_neon.cpp \
 	$(NOZZLE_DIR)/src/common/format_resolve.cpp \
+	$(NOZZLE_DIR)/src/common/backend_capabilities.cpp \
 	$(NOZZLE_DIR)/src/c_api/nozzle_c.cpp \
 	$(NOZZLE_DIR)/src/backends/opengl/opengl_backend.cpp
 
