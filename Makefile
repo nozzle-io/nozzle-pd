@@ -24,26 +24,11 @@ else
 	PLATFORM := linux
 endif
 
-COMMON_SRCS := \
-	$(NOZZLE_DIR)/src/common/ipc.cpp \
-	$(NOZZLE_DIR)/src/common/registry.cpp \
-	$(NOZZLE_DIR)/src/common/sender.cpp \
-	$(NOZZLE_DIR)/src/common/receiver.cpp \
-	$(NOZZLE_DIR)/src/common/frame.cpp \
-	$(NOZZLE_DIR)/src/common/texture.cpp \
-	$(NOZZLE_DIR)/src/common/device.cpp \
-	$(NOZZLE_DIR)/src/common/discovery.cpp \
-	$(NOZZLE_DIR)/src/common/metadata.cpp \
-	$(NOZZLE_DIR)/src/common/pixel_access.cpp \
-	$(NOZZLE_DIR)/src/common/channel_swizzle.cpp \
-	$(NOZZLE_DIR)/src/common/format_convert.cpp \
-	$(NOZZLE_DIR)/src/common/format_convert_sse2.cpp \
-	$(NOZZLE_DIR)/src/common/format_convert_f16c.cpp \
-	$(NOZZLE_DIR)/src/common/format_convert_neon.cpp \
-	$(NOZZLE_DIR)/src/common/format_resolve.cpp \
-	$(NOZZLE_DIR)/src/common/backend_capabilities.cpp \
-	$(NOZZLE_DIR)/src/c_api/nozzle_c.cpp \
-	$(NOZZLE_DIR)/src/backends/opengl/opengl_backend.cpp
+include $(NOZZLE_DIR)/sources/sources.mk
+# The build output depends on these lists as well as on its objects.
+NOZZLE_SOURCE_INPUTS := $(wildcard $(NOZZLE_DIR)/sources/*)
+
+COMMON_SRCS := $(NOZZLE_COMMON_SRCS) $(NOZZLE_OPENGL_SRCS)
 
 PD_SRCS := \
 	src/pix_nozzle_send.cpp \
@@ -53,13 +38,7 @@ PD_SRCS := \
 
 ifeq ($(PLATFORM),macos)
 	CXXFLAGS += -DNOZZLE_PLATFORM_MACOS=1 -DNOZZLE_HAS_METAL=1 -DNOZZLE_HAS_OPENGL=1
-	PLATFORM_SRCS := \
-		$(NOZZLE_DIR)/src/backends/metal/metal_backend.mm \
-		$(NOZZLE_DIR)/src/backends/metal/metal_texture.mm \
-		$(NOZZLE_DIR)/src/backends/metal/metal_channel_swap.mm \
-		$(NOZZLE_DIR)/src/backends/metal/metal_sync.mm \
-		$(NOZZLE_DIR)/src/common/channel_swizzle_vimage.cpp \
-		$(NOZZLE_DIR)/src/common/format_convert_vimage.cpp
+	PLATFORM_SRCS := $(NOZZLE_MACOS_SRCS)
 	LDFLAGS := -bundle -undefined dynamic_lookup \
 		-framework Metal -framework IOSurface -framework Foundation \
 		-framework Accelerate -framework OpenGL -framework CoreVideo \
@@ -69,8 +48,7 @@ endif
 
 ifeq ($(PLATFORM),linux)
 	CXXFLAGS += -DNOZZLE_PLATFORM_LINUX=1 -DNOZZLE_HAS_DMA_BUF=1 -DNOZZLE_HAS_OPENGL=1
-	PLATFORM_SRCS := \
-		$(NOZZLE_DIR)/src/backends/linux/linux_texture.cpp
+	PLATFORM_SRCS := $(NOZZLE_LINUX_SRCS)
 	LDFLAGS := -shared \
 		-ldrm -lgbm -lEGL -lGL -lstdc++
 	EXT := .pd_linux
@@ -78,10 +56,7 @@ endif
 
 ifeq ($(PLATFORM),windows)
 	CXXFLAGS += -DNOZZLE_PLATFORM_WINDOWS=1 -DNOZZLE_HAS_D3D11=1 -DNOZZLE_HAS_OPENGL=1
-	PLATFORM_SRCS := \
-		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_backend.cpp \
-		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_texture.cpp \
-		$(NOZZLE_DIR)/src/backends/d3d11/d3d11_sync.cpp
+	PLATFORM_SRCS := $(NOZZLE_WINDOWS_SRCS)
 
 	GEM_SRCS := \
 		$(GEM_DIR)/src/Gem/Exception.cpp \
@@ -178,9 +153,11 @@ $(BUILD_DIR)/pix_nozzle_gl_receive$(EXT): src/pix_nozzle_gl_receive.cpp $(NOZZLE
 
 endif
 
-$(NOZZLE_LIB): $(ALL_NOZZLE_OBJS)
+$(NOZZLE_LIB): $(ALL_NOZZLE_OBJS) $(NOZZLE_SOURCE_INPUTS)
 	@mkdir -p $(dir $@)
-	$(AR) rcs $@ $^
+	@# ar only adds members, so remove the archive to drop objects no longer listed.
+	@rm -f $@
+	$(AR) rcs $@ $(ALL_NOZZLE_OBJS)
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
