@@ -10,6 +10,11 @@ AR := ar
 CXXFLAGS := -std=c++17 -fno-exceptions -fno-rtti -O2 -fPIC
 PD_CXXFLAGS := -std=c++17 -O2 -fPIC
 
+# Extra compiler flags for both flag sets, e.g. the release ISA baseline.
+EXTRA_CXXFLAGS ?=
+CXXFLAGS += $(EXTRA_CXXFLAGS)
+PD_CXXFLAGS += $(EXTRA_CXXFLAGS)
+
 UNAME_S := $(shell uname -s)
 ifeq ($(OS),Windows_NT)
 	PLATFORM := windows
