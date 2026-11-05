@@ -135,6 +135,7 @@ jobs:
       # missing from the Makefile's hand-written list leaves a green build that fails
       # at runtime. Force the F16C path whatever the image's default is, then prove
       # no core symbol is left unresolved and the F16C object is actually linked.
+      # The empty EXTRA_CXXFLAGS keeps a baseline set in the job environment out of this build.
       - name: Verify core symbols resolve with F16C enabled
         if: runner.os == 'Linux'
         run: |
@@ -145,8 +146,8 @@ jobs:
               echo "unresolved core symbols in ${name}.pd_linux" >&2
               exit 1
             fi
+            nm -C ".build-f16c/${name}.pd_linux" | grep -F ' T nozzle::detail::widen_half_to_float_f16c'
           done
-          nm -C .build-f16c/libnozzle.a | grep -F ' T nozzle::detail::widen_half_to_float_f16c'
 
       - name: Prepare package metadata
         id: meta
