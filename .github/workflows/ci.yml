@@ -95,6 +95,12 @@ jobs:
           echo "Pd DLL: $(ls pd-0.56-2/bin/pd.dll)"
           echo "Gem DLL: $(ls Gem/Gem.dll)"
 
+      # nozzle-dev#196: published Linux binaries target x86-64-v2 explicitly, not
+      # the image compiler's default (x86-64-v3 on ubuntu-26.04).
+      - name: Set x86-64-v2 baseline
+        if: runner.os == 'Linux'
+        run: echo "EXTRA_CXXFLAGS=-march=x86-64-v2 -mtune=generic" >> "$GITHUB_ENV"
+
       - name: Build (non-Windows)
         if: runner.os != 'Windows'
         run: |
@@ -103,6 +109,15 @@ jobs:
             ARGS="$ARGS PD_DIR=deps/pd-headers"
           fi
           make $ARGS
+
+      - name: Verify x86-64-v2 ISA baseline
+        if: runner.os == 'Linux'
+        run: >-
+          bash deps/nozzle/scripts/check_x86_64_isa.sh
+          .build/pix_nozzle_send.pd_linux
+          .build/pix_nozzle_receive.pd_linux
+          .build/pix_nozzle_gl_send.pd_linux
+          .build/pix_nozzle_gl_receive.pd_linux
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
