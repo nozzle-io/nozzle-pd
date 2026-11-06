@@ -107,6 +107,17 @@ TARGETS := $(BUILD_DIR)/pix_nozzle_send$(EXT) \
 
 all: $(TARGETS)
 
+$(TARGETS): src/nozzle_pd_common.h src/nozzle_pd_pixels.h
+
+ifeq ($(PLATFORM),macos)
+.PHONY: test-pixel-peer
+test-pixel-peer: $(BUILD_DIR)/pixel_peer
+	$(BUILD_DIR)/pixel_peer
+
+$(BUILD_DIR)/pixel_peer: tests/pixel_peer.cpp src/nozzle_pd_common.h src/nozzle_pd_pixels.h $(NOZZLE_LIB)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -Isrc $< $(NOZZLE_LIB) $(filter-out -bundle -undefined dynamic_lookup,$(LDFLAGS)) -o $@
+endif
+
 ifeq ($(PLATFORM),windows)
 
 $(BUILD_DIR)/pix_nozzle_send$(EXT): src/pix_nozzle_send.cpp $(NOZZLE_LIB) $(GEM_OBJS)

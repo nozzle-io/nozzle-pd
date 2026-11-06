@@ -119,6 +119,11 @@ jobs:
           .build/pix_nozzle_gl_send.pd_linux
           .build/pix_nozzle_gl_receive.pd_linux
 
+      - name: Verify CPU channel order against native Metal peer
+        if: runner.os == 'macOS'
+        timeout-minutes: 2
+        run: make GEM_DIR=deps/gem-headers PD_DIR=deps/pd-headers test-pixel-peer
+
       - name: Build (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}

@@ -8,6 +8,7 @@ extern "C" {
 #include "Gem/Image.h"
 #include "Gem/Cache.h"
 #include "nozzle_pd_common.h"
+#include "nozzle_pd_pixels.h"
 
 #include <cstring>
 #include <string>
@@ -134,18 +135,7 @@ void pix_nozzle_receive :: render(GemState *state) {
         m_last_height = h;
     }
 
-    uint32_t src_row_bytes = (uint32_t)(mapped.row_stride_bytes < 0
-        ? -mapped.row_stride_bytes : mapped.row_stride_bytes);
-    uint32_t dst_row_bytes = (uint32_t)(w * m_pixBlock.image.csize);
-    uint32_t copy_bytes = (src_row_bytes < dst_row_bytes) ? src_row_bytes : dst_row_bytes;
-
-    for(uint32_t y = 0; y < h; y++) {
-        const unsigned char *src_row =
-            (const unsigned char *)mapped.data + (int64_t)y * mapped.row_stride_bytes;
-        unsigned char *dst_row =
-            (unsigned char *)m_pixBlock.image.data + (int64_t)y * dst_row_bytes;
-        memcpy(dst_row, src_row, copy_bytes);
-    }
+    nozzle_pd::copy_mapped_to_image(mapped, m_pixBlock.image);
 
     nozzle_frame_unlock_pixels(frame);
     nozzle_frame_release(frame);
