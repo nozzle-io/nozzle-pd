@@ -197,23 +197,41 @@ bool check_signed_rows(NozzleTextureFormat format) {
         }
         for(int i = 8; i < 16; ++i) if(row[i] != 0xcd) return false;
     }
+    // Exercise the four-channel core-swizzle branch with a signed destination too.
+    unsigned char input4[16];
+    for(int x = 0; x < 4; ++x) {
+        std::memcpy(input4 + 4*x, input + 3*x, 3);
+        input4[4*x+3] = 149;
+    }
+    image_view source4{2, 2, 4, GL_RGBA, GL_UNSIGNED_BYTE, true, input4};
+    std::memset(storage, 0xcd, sizeof(storage));
+    if(!nozzle_pd::copy_image_to_mapped(source4, mapped)) return false;
+    for(int y = 0; y < 2; ++y) {
+        const auto *row = storage + 16 - y * 16;
+        for(int x = 0; x < 2; ++x) {
+            const auto *rgb = input + ((1-y)*2+x)*3;
+            if(row[4*x] != rgb[bgra ? 2 : 0] || row[4*x+1] != rgb[1] ||
+               row[4*x+2] != rgb[bgra ? 0 : 2] || row[4*x+3] != 149) return false;
+        }
+        for(int i = 8; i < 16; ++i) if(row[i] != 0xcd) return false;
+    }
     // Independent input for receive: don't feed it the send helper's result.
     std::memset(storage, 0xcd, sizeof(storage));
     for(int y = 0; y < 2; ++y) {
         auto *row = storage + 16 - y * 16;
         for(int x = 0; x < 2; ++x) {
-            row[4*x] = bgra ? 41 : 191;
-            row[4*x+1] = 23;
-            row[4*x+2] = bgra ? 191 : 41;
-            row[4*x+3] = 149;
+            row[4*x] = (bgra ? 41 : 191) + y;
+            row[4*x+1] = 23 + x;
+            row[4*x+2] = (bgra ? 191 : 41) + y;
+            row[4*x+3] = 149 + x;
         }
     }
     unsigned char output[16]{};
     image_view target{2, 2, 4, GL_RGBA, GL_UNSIGNED_BYTE, false, output};
     if(!nozzle_pd::copy_mapped_to_image(mapped, target)) return false;
     for(int x = 0; x < 4; ++x) {
-        if(output[4*x] != 191 || output[4*x+1] != 23 ||
-           output[4*x+2] != 41 || output[4*x+3] != 149) return false;
+        if(output[4*x] != 191 + x/2 || output[4*x+1] != 23 + x%2 ||
+           output[4*x+2] != 41 + x/2 || output[4*x+3] != 149 + x%2) return false;
     }
     // Reject an undersized row before writing anything.
     std::memset(storage, 0xcd, sizeof(storage));
