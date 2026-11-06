@@ -119,7 +119,12 @@ void pix_nozzle_send :: render(GemState *state) {
         return;
     }
 
-    nozzle_pd::copy_image_to_mapped(img, mapped);
+    if(!nozzle_pd::copy_image_to_mapped(img, mapped)) {
+        nozzle_frame_unlock_writable_pixels(frame);
+        (void)nozzle_sender_discard_frame(m_sender, frame);
+        error("pix_nozzle_send: unsupported pixel layout or channel copy failed");
+        return;
+    }
 
     err = nozzle_frame_unlock_writable_pixels_checked(frame);
     if(err != NOZZLE_OK) {

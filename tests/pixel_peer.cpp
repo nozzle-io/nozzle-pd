@@ -87,10 +87,13 @@ bool run_case(const char *label, bool pd_sends, int channels,
                 const unsigned char r = (unsigned char)(190 + y);
                 const unsigned char g = (unsigned char)(20 + x);
                 const unsigned char b = (unsigned char)(40 + y);
-                if(type == GL_UNSIGNED_INT_8_8_8_8) {
-                    // Numeric BGRA packed word: endian-independent construction.
-                    const uint32_t word = (uint32_t(b) << 24) | (uint32_t(g) << 16) |
-                        (uint32_t(r) << 8) | 149u;
+                if(type == GL_UNSIGNED_INT_8_8_8_8 || type == GL_UNSIGNED_INT_8_8_8_8_REV) {
+                    // Construct the specified GL numeric word, not the helper's byte permutation.
+                    const uint32_t first = format == GL_BGRA ? b : r;
+                    const uint32_t third = format == GL_BGRA ? r : b;
+                    const uint32_t word = type == GL_UNSIGNED_INT_8_8_8_8
+                        ? (first << 24) | (uint32_t(g) << 16) | (third << 8) | 149u
+                        : first | (uint32_t(g) << 8) | (third << 16) | (149u << 24);
                     std::memcpy(pixel, &word, sizeof(word));
                 } else {
                     const bool bgr = format == GL_BGR || format == GL_BGRA;
@@ -102,7 +105,7 @@ bool run_case(const char *label, bool pd_sends, int channels,
             }
         }
         image_view input{width, height, channels, format, type, flip, source.data()};
-        nozzle_pd::copy_image_to_mapped(input, mapped);
+        if(!nozzle_pd::copy_image_to_mapped(input, mapped)) return false;
     } else {
         // Independent native producer: write BGRA bytes directly, never Pd's helper.
         for(int y = 0; y < height; ++y) {
@@ -141,14 +144,14 @@ bool run_case(const char *label, bool pd_sends, int channels,
     if(!pd_sends) {
         NozzleFrameInfo info{};
         if(!ok(nozzle_frame_get_info(peer.read, &info), "frame info")) return false;
-        image_view image{width, height, nozzle_pd::nozzle_to_gem_csize(info.format),
-            (unsigned)nozzle_pd::nozzle_to_gem_format(info.format),
-            (unsigned)nozzle_pd::nozzle_to_gem_type(info.format), false, output.data()};
+        image_view image{width, height, nozzle_pd::nozzle_to_gem_csize(mapped.format),
+            (unsigned)nozzle_pd::nozzle_to_gem_format(mapped.format),
+            (unsigned)nozzle_pd::nozzle_to_gem_type(mapped.format), false, output.data()};
         if(image.csize != 4 || image.type != GL_UNSIGNED_BYTE || image.format != GL_RGBA) {
             std::fprintf(stderr, "unexpected GEM output layout\n");
             return false;
         }
-        nozzle_pd::copy_mapped_to_image(mapped, image);
+        if(!nozzle_pd::copy_mapped_to_image(mapped, image)) return false;
     }
     // The native receiver oracle never calls Pd's receive conversion, and vice versa.
     for(int y = 0; y < height; ++y) {
@@ -169,6 +172,57 @@ bool run_case(const char *label, bool pd_sends, int channels,
     }
     return true;
 }
+
+// Supplement the real Metal peer: it normally gives positive BGRA row strides.
+bool check_signed_rows(NozzleTextureFormat format) {
+    unsigned char input[] = {191,23,41, 192,24,42, 193,25,43, 194,26,44};
+    unsigned char storage[32];
+    std::memset(storage, 0xcd, sizeof(storage));
+    NozzleMappedPixels mapped{};
+    mapped.data = storage + 16;
+    mapped.row_stride_bytes = -16;
+    mapped.width = 2;
+    mapped.height = 2;
+    mapped.format = format;
+    mapped.origin = NOZZLE_ORIGIN_TOP_LEFT;
+    image_view source{2, 2, 3, GL_RGB, GL_UNSIGNED_BYTE, true, input};
+    if(!nozzle_pd::copy_image_to_mapped(source, mapped)) return false;
+    const bool bgra = format == NOZZLE_FORMAT_BGRA8_SRGB;
+    for(int y = 0; y < 2; ++y) {
+        const auto *row = storage + 16 - y * 16;
+        for(int x = 0; x < 2; ++x) {
+            const auto *rgb = input + ((1-y)*2+x)*3;
+            if(row[4*x] != rgb[bgra ? 2 : 0] || row[4*x+1] != rgb[1] ||
+               row[4*x+2] != rgb[bgra ? 0 : 2] || row[4*x+3] != 255) return false;
+        }
+        for(int i = 8; i < 16; ++i) if(row[i] != 0xcd) return false;
+    }
+    // Independent input for receive: don't feed it the send helper's result.
+    std::memset(storage, 0xcd, sizeof(storage));
+    for(int y = 0; y < 2; ++y) {
+        auto *row = storage + 16 - y * 16;
+        for(int x = 0; x < 2; ++x) {
+            row[4*x] = bgra ? 41 : 191;
+            row[4*x+1] = 23;
+            row[4*x+2] = bgra ? 191 : 41;
+            row[4*x+3] = 149;
+        }
+    }
+    unsigned char output[16]{};
+    image_view target{2, 2, 4, GL_RGBA, GL_UNSIGNED_BYTE, false, output};
+    if(!nozzle_pd::copy_mapped_to_image(mapped, target)) return false;
+    for(int x = 0; x < 4; ++x) {
+        if(output[4*x] != 191 || output[4*x+1] != 23 ||
+           output[4*x+2] != 41 || output[4*x+3] != 149) return false;
+    }
+    // Reject an undersized row before writing anything.
+    std::memset(storage, 0xcd, sizeof(storage));
+    mapped.row_stride_bytes = 7;
+    if(nozzle_pd::copy_image_to_mapped(source, mapped) ||
+       nozzle_pd::copy_mapped_to_image(mapped, target)) return false;
+    for(auto byte : storage) if(byte != 0xcd) return false;
+    return true;
+}
 } // namespace
 
 int main() {
@@ -179,6 +233,9 @@ int main() {
         {"bgra", true, 4, GL_BGRA, GL_UNSIGNED_BYTE, false},
         {"bgr", true, 3, GL_BGR, GL_UNSIGNED_BYTE, false},
         {"gem-packed", true, 4, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, false},
+        {"bgra-packed-rev", true, 4, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, false},
+        {"rgba-packed", true, 4, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, false},
+        {"rgba-packed-rev", true, 4, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},
         {"rgba-flipped", true, 4, GL_RGBA, GL_UNSIGNED_BYTE, true},
         {"native-to-pd", false, 4, GL_RGBA, GL_UNSIGNED_BYTE, false},
     };
@@ -188,6 +245,11 @@ int main() {
         std::printf("%s %s\n", test.name, pass ? "PASS" : "FAIL");
         if(!pass) ++failed;
     }
-    std::printf("pixel_peer failed=%d total=7\n", failed);
+    for(auto format : {NOZZLE_FORMAT_RGBA8_UNORM, NOZZLE_FORMAT_BGRA8_SRGB}) {
+        const bool pass = check_signed_rows(format);
+        std::printf("signed-rows format=%d %s\n", (int)format, pass ? "PASS" : "FAIL");
+        if(!pass) ++failed;
+    }
+    std::printf("pixel_peer failed=%d total=12\n", failed);
     return failed == 0 ? 0 : 1;
 }

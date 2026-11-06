@@ -113,14 +113,16 @@ void pix_nozzle_receive :: render(GemState *state) {
         return;
     }
 
-    if(!m_pix_allocated || w != m_last_width || h != m_last_height) {
+    // CPU layout follows the mapping, not the frame's GPU storage metadata.
+    int csize = nozzle_pd::nozzle_to_gem_csize(mapped.format);
+    int format = nozzle_pd::nozzle_to_gem_format(mapped.format);
+    int type = nozzle_pd::nozzle_to_gem_type(mapped.format);
+    if(!m_pix_allocated || w != m_last_width || h != m_last_height ||
+       m_pixBlock.image.csize != csize || m_pixBlock.image.format != format ||
+       m_pixBlock.image.type != type) {
         if(m_pix_allocated) {
             m_pixBlock.image.clear();
         }
-
-        int csize = nozzle_pd::nozzle_to_gem_csize(finfo.format);
-        int format = nozzle_pd::nozzle_to_gem_format(finfo.format);
-        int type = nozzle_pd::nozzle_to_gem_type(finfo.format);
 
         m_pixBlock.image.xsize = (int)w;
         m_pixBlock.image.ysize = (int)h;
@@ -135,10 +137,15 @@ void pix_nozzle_receive :: render(GemState *state) {
         m_last_height = h;
     }
 
-    nozzle_pd::copy_mapped_to_image(mapped, m_pixBlock.image);
+    const bool copied = nozzle_pd::copy_mapped_to_image(mapped, m_pixBlock.image);
 
     nozzle_frame_unlock_pixels(frame);
     nozzle_frame_release(frame);
+
+    if(!copied) {
+        error("pix_nozzle_receive: unsupported pixel layout or channel copy failed");
+        return;
+    }
 
     m_pixBlock.newimage = 1;
     state->set(GemState::_PIX, &m_pixBlock);
