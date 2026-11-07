@@ -6,8 +6,8 @@ PureData/GEM externals for [nozzle](https://github.com/nozzle-io/nozzle) — cro
 
 | Object | Description |
 |--------|-------------|
-| `pix_nozzle_send` | Sends GEM pix image data via nozzle (CPU copy path) |
-| `pix_nozzle_receive` | Receives nozzle frames and injects into GEM render chain |
+| `pix_nozzle_send` | Sends 8-bit color pix data (CPU copy path; layout limits below) |
+| `pix_nozzle_receive` | Receives 8-bit color frames as RGBA pix data (layout limits below) |
 | `pix_nozzle_gl_send` | **Unsupported**: known GL format-mapping and state-handling defects; see below |
 | `pix_nozzle_gl_receive` | **Unsupported**: received texture is not delivered to Gem; see below |
 
@@ -56,6 +56,40 @@ cp .build/*.pd_darwin help/*.pd README.md ~/.pd-externals/nozzle-pd/  # macOS
 Then add `~/.pd-externals/nozzle-pd` to Pd's search path.
 
 ## Usage
+
+### CPU pixel layout limits
+
+**Non-byte CPU layouts are unsupported.** Do not send or receive 16-bit integer,
+half-float, float, 32-bit integer or depth images with `pix_nozzle_send` or
+`pix_nozzle_receive`. Known component-count and row-layout defects are tracked in
+[nozzle-dev#219](https://github.com/nozzle-io/nozzle-dev/issues/219).
+
+The tested CPU color-copy scope is:
+
+- Send: `GL_UNSIGNED_BYTE` RGB/BGR with three components or RGBA/BGRA with four
+  components; also four-component RGBA/BGRA packed `GL_UNSIGNED_INT_8_8_8_8`
+  and `GL_UNSIGNED_INT_8_8_8_8_REV` (8 bits per component, not 32-bit channels).
+  Three-component byte input expands alpha to 255.
+- Receive: mapped RGBA8/BGRA8 color data becomes `GL_RGBA` / `GL_UNSIGNED_BYTE`
+  with four components. The copy helpers preserve sRGB bytes; they do not perform
+  a color-space conversion or establish Gem color-management behavior.
+
+Other layouts, including single/two-channel, signed and unknown representations,
+are outside this validated scope. The current runtime does not consistently
+reject every unsupported layout: non-byte receive mappings use byte counts as
+component counts, generic copies omit the component byte width from row sizing,
+and float RGB input is not expanded to RGBA. Unknown type mappings can fall back
+to RGBA8. A successful call is therefore not evidence of correct pixels for these
+formats. Repeated copy failures can also emit a Pd console error every frame;
+bounded reporting on error/layout transitions remains part of #219.
+
+This support notice changes no runtime behavior. The existing
+[CPU/native-peer harness](tests/README.md) checks asymmetric pixels, padding,
+channel order and flips on the byte color path. It is not a real Pd/Gem host test;
+loading, scheduling and display remain unverified. Restoring non-byte support
+requires checking Gem's allocation/layout contract at an exact source revision,
+independent typed pixel tests (including RGB alpha expansion and same-size format
+changes), rejection tests and bounded error/recovery behavior in the host.
 
 ### pix_nozzle_send
 
