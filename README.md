@@ -13,12 +13,12 @@ PureData/GEM externals for [nozzle](https://github.com/nozzle-io/nozzle) — cro
 
 Help patches are shipped for all four objects:
 
-The GL help patches are legacy examples, not working or validated usage recipes.
-
 - `pix_nozzle_send-help.pd`
 - `pix_nozzle_receive-help.pd`
 - `pix_nozzle_gl_send-help.pd`
 - `pix_nozzle_gl_receive-help.pd`
+
+The GL help patches are legacy examples, not working or validated usage recipes.
 
 ## Build
 
@@ -120,8 +120,9 @@ Messages:
 ### GL objects — unsupported
 
 Do not use `pix_nozzle_gl_send` or `pix_nozzle_gl_receive` for frame delivery.
-They remain in development packages, but have known correctness defects tracked
-in [nozzle-dev#220](https://github.com/nozzle-io/nozzle-dev/issues/220):
+The GL externals and help patches are still shipped in release packages; shipping
+them does not mean they are supported. Known correctness defects are tracked in
+[nozzle-dev#220](https://github.com/nozzle-io/nozzle-dev/issues/220):
 
 - The receiver copies into a private GL texture, then publishes a newly allocated
   Gem pix block without populating its pixels or exposing the texture to Gem.
