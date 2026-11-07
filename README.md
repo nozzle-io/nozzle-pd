@@ -8,10 +8,12 @@ PureData/GEM externals for [nozzle](https://github.com/nozzle-io/nozzle) — cro
 |--------|-------------|
 | `pix_nozzle_send` | Sends GEM pix image data via nozzle (CPU copy path) |
 | `pix_nozzle_receive` | Receives nozzle frames and injects into GEM render chain |
-| `pix_nozzle_gl_send` | Sends OpenGL texture directly via nozzle (GPU path) |
-| `pix_nozzle_gl_receive` | Receives nozzle frame and copies to OpenGL texture |
+| `pix_nozzle_gl_send` | **Unsupported**: known GL format-mapping and state-handling defects; see below |
+| `pix_nozzle_gl_receive` | **Unsupported**: received texture is not delivered to Gem; see below |
 
 Help patches are shipped for all four objects:
+
+The GL help patches are legacy examples, not working or validated usage recipes.
 
 - `pix_nozzle_send-help.pd`
 - `pix_nozzle_receive-help.pd`
@@ -81,31 +83,29 @@ Messages:
 Messages:
 - `name <symbol>` — set sender name to connect to (default: "nozzle_sender")
 
-### pix_nozzle_gl_send
+### GL objects — unsupported
 
-```
-[gemhead]
-|
-[pix_video]
-|
-[pix_nozzle_gl_send my_sender_name]
-```
+Do not use `pix_nozzle_gl_send` or `pix_nozzle_gl_receive` for frame delivery.
+They remain in development packages, but have known correctness defects tracked
+in [nozzle-dev#220](https://github.com/nozzle-io/nozzle-dev/issues/220):
 
-Messages:
-- `name <symbol>` — set sender name (default: "nozzle_sender")
+- The receiver copies into a private GL texture, then publishes a newly allocated
+  Gem pix block without populating its pixels or exposing the texture to Gem.
+  Connecting its output to `pix_texture` does not make that block contain the
+  received frame.
+- Receive texture allocation tracks dimensions only, so a same-size format
+  change can retain the wrong representation. GL binding/state restoration and
+  texture lifetime across context teardown also need a defined host contract.
+- The sender conflates `GL_RG16` with single-channel `R16`, treats some signed
+  normalized formats as unsigned, and guesses RGBA8 for unknown internal formats.
+  These paths can misrepresent data instead of rejecting it.
 
-### pix_nozzle_gl_receive
-
-```
-[gemhead]
-|
-[pix_nozzle_gl_receive my_sender_name]
-|
-[pix_texture]
-```
-
-Messages:
-- `name <symbol>` — set sender name to connect to (default: "nozzle_sender")
+The CPU objects above are the alternative within their supported pixel layouts.
+Building all four externals, or passing the CPU channel-copy/native-peer test,
+does **not** validate the GL objects in a running Pd/Gem host. Restoring GL support
+requires independent send/receive asymmetric-pattern tests in that host, including
+same-size format transitions and context teardown. This notice records the
+current limitation; it does not disable or repair the GL runtime code.
 
 ## Requirements
 
