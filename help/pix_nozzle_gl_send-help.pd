@@ -9,10 +9,10 @@
 #X obj 40 325 gemwin;
 #X msg 40 290 create \, 1;
 #X msg 135 290 0 \, destroy;
-#X text 40 15 pix_nozzle_gl_send - publish the currently bound OpenGL texture through nozzle.;
+#X text 40 15 UNSUPPORTED: pix_nozzle_gl_send https://github.com/nozzle-io/nozzle-dev/issues/220;
 #X text 40 370 Creation: [pix_nozzle_gl_send <sender-name>] creates or reuses a nozzle sender. If omitted the sender name defaults to nozzle_sender.;
 #X text 40 405 Inlet: GEM render chain after an upstream object such as [pix_texture] has bound GL_TEXTURE_2D. Outlet: normal GEM chain continuation.;
-#X text 40 440 Smoke test: run this patch and pix_nozzle_gl_receive-help.pd with the same name nozzle_pd_gl_demo.;
+#X text 40 440 Legacy wiring only - not working or validated usage.;
 #X text 40 490 Message: [name <symbol>( changes the sender name and recreates the sender on the next publish.;
 #X text 40 525 Notes: this is the GPU/OpenGL path. A valid OpenGL context and a bound 2D texture are required; otherwise no frame is published.;
 #X connect 1 0 2 0;

@@ -8,10 +8,10 @@
 #X obj 40 290 gemwin;
 #X msg 40 255 create \, 1;
 #X msg 135 255 0 \, destroy;
-#X text 40 15 pix_nozzle_gl_receive - receive a nozzle frame and copy it into a GEM/OpenGL texture path.;
+#X text 40 15 UNSUPPORTED: pix_nozzle_gl_receive https://github.com/nozzle-io/nozzle-dev/issues/220;
 #X text 40 335 Creation: [pix_nozzle_gl_receive <sender-name>] connects to a nozzle sender. If omitted the sender name defaults to nozzle_sender.;
-#X text 40 370 Inlet: GEM render-chain trigger from [gemhead]. Outlet: GEM pix chain for [pix_texture] and downstream drawing.;
-#X text 40 405 Smoke test: run pix_nozzle_gl_send-help.pd or another GL sender named nozzle_pd_gl_demo \, then open the GEM window here.;
+#X text 40 370 Legacy wiring only. The received texture is not delivered to Gem or [pix_texture].;
+#X text 40 405 Legacy wiring only - not working or validated usage.;
 #X text 40 455 Message: [name <symbol>( changes the receiver target and reconnects on the next render pass.;
 #X text 40 490 Notes: receive is non-blocking latest-only. A valid OpenGL context is required because the frame is copied into a GL texture.;
 #X connect 1 0 2 0;
