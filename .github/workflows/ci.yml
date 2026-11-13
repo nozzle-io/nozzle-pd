@@ -152,6 +152,18 @@ jobs:
           done
           echo "All 4 externals verified"
 
+      - name: Verify static core is private and Pd entry points remain exported
+        if: runner.os == 'Linux'
+        run: |
+          for name in pix_nozzle_send pix_nozzle_receive pix_nozzle_gl_send pix_nozzle_gl_receive; do
+            nm -DC --defined-only ".build/${name}.pd_linux" > "$RUNNER_TEMP/${name}-exports.txt"
+            grep -E "[[:space:]]${name}_setup$" "$RUNNER_TEMP/${name}-exports.txt"
+            if grep -E 'nozzle::|[[:space:]]nozzle_[[:alnum:]_]+$' "$RUNNER_TEMP/${name}-exports.txt"; then
+              echo "::error::Static core symbols escaped ${name}.pd_linux"
+              exit 1
+            fi
+          done
+
       # nozzle-dev#197: `-shared` links with undefined symbols allowed, so a core source
       # missing from the Makefile's hand-written list leaves a green build that fails
       # at runtime. Force the F16C path whatever the image's default is, then prove
@@ -167,7 +179,7 @@ jobs:
               echo "unresolved core symbols in ${name}.pd_linux" >&2
               exit 1
             fi
-            nm -C ".build-f16c/${name}.pd_linux" | grep -F ' T nozzle::detail::widen_half_to_float_f16c'
+            nm -C ".build-f16c/${name}.pd_linux" | grep -E ' [Tt] nozzle::detail::widen_half_to_float_f16c'
           done
 
       # nozzle-dev#198: add a source through core's list, then take it out again in the
