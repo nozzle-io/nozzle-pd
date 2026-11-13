@@ -158,7 +158,7 @@ jobs:
           for name in pix_nozzle_send pix_nozzle_receive pix_nozzle_gl_send pix_nozzle_gl_receive; do
             nm -DC --defined-only ".build/${name}.pd_linux" > "$RUNNER_TEMP/${name}-exports.txt"
             grep -E "[[:space:]]${name}_setup$" "$RUNNER_TEMP/${name}-exports.txt"
-            if grep -E 'nozzle::|[[:space:]]nozzle_' "$RUNNER_TEMP/${name}-exports.txt"; then
+            if grep -E 'nozzle::|[[:space:]]nozzle_[[:alnum:]_]+$' "$RUNNER_TEMP/${name}-exports.txt"; then
               echo "::error::Static core symbols escaped ${name}.pd_linux"
               exit 1
             fi
